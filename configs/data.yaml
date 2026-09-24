@@ -1,0 +1,29 @@
+random_seed: 17
+data:
+  audio_root: /share/workspace3/ieeg/seeg/story_listen_v2/stimuli_wav
+  alignment_root: /share/workspace3/ieeg/seeg/story_listen_v2/stimuli_textgrid
+  alignment_format: TEXTGRID
+  output_root: /share/home/mitan/audio_model
+  manifest_path: outputs/manifest.csv
+  validation_report: outputs/validation_report.json
+  language: zh
+  split_group: story_id
+  # Praat grids are rounded to 1 ms; known empty terminal intervals exceed WAVs by ~26 ms.
+  empty_annotation_end_tolerance_seconds: 0.03
+  sample_ids:
+    - chs_story4_pt8_1
+    - chs_story4_pt8_3
+    - story03
+    - story06
+    - story13
+    - szdt2
+    - chs_story4_pt8_2
+    - story01
+    - story04
+    - story08
+    - szdt1
+    - szdt3
+  excluded_ids:
+    story17: control_condition_nonsemantic_audio
+    story18: control_condition_nonsemantic_audio
+

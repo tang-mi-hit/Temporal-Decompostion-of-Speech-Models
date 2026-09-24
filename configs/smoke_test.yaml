@@ -1,0 +1,17 @@
+random_seed: 17
+analysis_rate_hz: 50
+smoke:
+  synthetic: true
+  duration_seconds: 8
+  n_groups: 4
+  n_targets: 6
+  output_dir: outputs/smoke
+analysis:
+  target_mode: pca
+  n_components: 4
+  outer_folds: 4
+  inner_folds: 3
+  alphas: [0.1, 1.0, 10.0]
+  lags_seconds: [-0.04, 0.0, 0.04]
+  stable_positive_r2_epsilon: 0.0001
+

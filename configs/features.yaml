@@ -1,0 +1,33 @@
+random_seed: 17
+analysis_rate_hz: 50
+audio_sample_rate_hz: 16000
+features:
+  log_mel:
+    enabled: true
+    family: acoustic
+    n_mels: 40
+    n_fft: 400
+    hop_length: 320
+  envelope:
+    enabled: true
+    family: acoustic
+  prosody:
+    enabled: true
+    family: prosodic
+    f0_min_hz: 60
+    f0_max_hz: 500
+  recording_onset:
+    enabled: true
+    family: onset
+  phones:
+    enabled: true
+    family: phonetic
+  words:
+    enabled: true
+    family: word
+  optional:
+    phoneme_sequence_statistics: {enabled: false, status: unavailable_without_resource}
+    word_frequency: {enabled: false, status: unavailable_without_resource}
+    lexical_surprisal: {enabled: false, status: unavailable_without_resource}
+    contextual_text_embeddings: {enabled: false, status: unavailable_without_resource}
+

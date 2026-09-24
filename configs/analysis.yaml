@@ -1,0 +1,17 @@
+random_seed: 17
+analysis_rate_hz: 50
+analysis:
+  target_mode: pca
+  n_components: 30
+  outer_folds: 5
+  inner_folds: 4
+  alphas: [0.1, 1.0, 10.0, 100.0]
+  # Project extension: temporal lags are configurable and not attributed to Zhang et al.
+  lags_seconds: [-0.2, -0.1, 0.0, 0.1, 0.2]
+  stable_positive_r2_epsilon: 0.0001
+  feature_families: [acoustic, prosodic, onset, phonetic, word]
+paper_compatible:
+  # Only the zero-lag choice is explicitly separated here; this is not an exact replication.
+  lags_seconds: [0.0]
+  analysis_rate_hz: 50
+

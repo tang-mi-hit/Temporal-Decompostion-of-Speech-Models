@@ -1,0 +1,175 @@
+random_seed: 17
+default_model: hubert_large_reference
+runtime_defaults:
+  device: cuda
+  dtype: float16
+  batch_seconds: 20
+  chunk_overlap_seconds: 1
+  layers: all
+  canonical_rate_hz: 50
+
+models:
+  hubert_large_reference:
+    model_id: facebook/hubert-large-ls960-ft
+    revision: main
+    family: hubert
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: HubertModel
+    layers: all
+    enabled: true
+    locked_reference: true
+    output_dir: outputs/hubert_large_reference
+    license_notes: Facebook HuBERT model card; review before redistribution.
+    limitations: Completed reference outputs are immutable; Mandarin is out of training domain.
+
+  hubert_base:
+    model_id: facebook/hubert-base-ls960
+    revision: main
+    family: hubert
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: HubertModel
+    layers: all
+    enabled: true
+    license_notes: Facebook HuBERT model card.
+    limitations: Mandarin is out of training domain.
+
+  wav2vec2_base:
+    model_id: facebook/wav2vec2-base-960h
+    revision: main
+    family: wav2vec2
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: Wav2Vec2ForCTC
+    layers: all
+    enabled: true
+    license_notes: Apache-2.0 model card.
+    limitations: English ASR fine-tuning and Mandarin domain mismatch.
+
+  wav2vec2_large:
+    model_id: facebook/wav2vec2-large-960h-lv60-self
+    revision: main
+    family: wav2vec2
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: Wav2Vec2ForCTC
+    layers: all
+    enabled: true
+    license_notes: MIT model card.
+    limitations: Large checkpoint; English-domain fine-tuning.
+
+  wavlm_base_plus:
+    model_id: microsoft/wavlm-base-plus
+    revision: main
+    family: wavlm
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: WavLMModel
+    layers: all
+    enabled: true
+    license_notes: MIT model card.
+    limitations: Confirm downstream use against the model card.
+
+  wavlm_large:
+    model_id: microsoft/wavlm-large
+    revision: main
+    family: wavlm
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: WavLMModel
+    layers: all
+    enabled: true
+    license_notes: MIT model card.
+    limitations: Large checkpoint and substantial activation storage.
+
+  data2vec_audio_base:
+    model_id: facebook/data2vec-audio-base-960h
+    revision: main
+    family: data2vec_audio
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: Data2VecAudioModel
+    layers: all
+    enabled: true
+    license_notes: MIT model card.
+    limitations: English-domain checkpoint.
+
+  xls_r_300m:
+    model_id: facebook/wav2vec2-xls-r-300m
+    revision: main
+    family: xls_r
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: Wav2Vec2Model
+    layers: all
+    enabled: true
+    license_notes: Model card reports CC-BY-NC-4.0; review noncommercial restriction.
+    limitations: Multilingual pretraining; no task fine-tuning.
+
+  w2v_bert_2:
+    model_id: facebook/w2v-bert-2.0
+    revision: 54f8052b2977e20ce7ae3f735d90ba54733c108e
+    family: wav2vec2_bert
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: feature_speech
+    loading_class: Wav2Vec2BertModel
+    layers: all
+    enabled: false
+    license_notes: Public MIT-licensed Hugging Face checkpoint.
+    limitations: Public identifier confirmed; disabled until native frontend timing is runtime-validated.
+
+  whisper_medium_encoder:
+    model_id: openai/whisper-medium
+    revision: main
+    family: whisper
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: whisper_encoder
+    loading_class: WhisperModel
+    layers: all
+    enabled: true
+    license_notes: MIT model card.
+    limitations: Encoder only; fixed-window log-mel frontend and context differ from waveform encoders.
+
+  mms_1b_all:
+    model_id: facebook/mms-1b-all
+    revision: main
+    family: mms
+    input_modality: audio
+    sample_rate_hz: 16000
+    adapter: generic_speech
+    loading_class: Wav2Vec2Model
+    layers: all
+    enabled: false
+    license_notes: License review required before use.
+    limitations: Disabled by default; approximately one billion parameters.
+
+  bert_base_uncased:
+    model_id: google-bert/bert-base-uncased
+    revision: main
+    family: bert
+    input_modality: text
+    sample_rate_hz: null
+    adapter: bert_text
+    loading_class: BertModel
+    layers: all
+    enabled: true
+    context_policy: sentence
+    sentence_source: punctuation_or_gap
+    sentence_gap_seconds: 0.5
+    wordpiece_pooling: mean
+    outside_word_policy: zeros
+    overlength_sentence_policy: error
+    license_notes: Apache-2.0 model card.
+    limitations: Text-only baseline; uncased English vocabulary is poorly matched to Mandarin.
+

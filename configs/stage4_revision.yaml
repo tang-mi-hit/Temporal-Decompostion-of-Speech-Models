@@ -1,0 +1,76 @@
+schema_version: 1
+random_seed: 17
+analysis_rate_hz: 50
+expected_recording_count: 12
+manifest: outputs/manifest.csv
+model_root: outputs
+audit_output: outputs/stage4_revision/audit/input_audit.json
+governance_inputs:
+  revision_roadmap: ../paper1_pipeline_20260914/stage3_review/revision_roadmap.json
+  claim_surface_manifest: ../paper1_pipeline_20260914/stage4_revision/claim_surface_manifest.json
+features:
+  original: outputs/features
+  rich: outputs/stage4_revision/features_rich
+output_root: outputs/stage4_revision
+output_subdirs:
+  nulls: null_controls
+  summaries: model_comparison
+  figure_sources: figures/source_tables
+  pca_coverage: pca_coverage
+  synthetic_test: synthetic_test
+models:
+  - directory: hubert_base
+    identity: hubert_base
+  - directory: hubert_large_refactor_rerun
+    identity: hubert_large_reference
+  - directory: wav2vec2_base
+    identity: wav2vec2_base
+  - directory: wav2vec2_large
+    identity: wav2vec2_large
+  - directory: wavlm_base_plus
+    identity: wavlm_base_plus
+  - directory: wavlm_large
+    identity: wavlm_large
+  - directory: data2vec_audio_base
+    identity: data2vec_audio_base
+  - directory: xls_r_300m
+    identity: xls_r_300m
+  - directory: whisper_medium_encoder
+    identity: whisper_medium_encoder
+families: [acoustic, prosodic, phonetic, word, onset]
+variants:
+  original:
+    output_subdir: fits_original_recording_level
+    feature_set: original
+    lags_seconds: [-0.2, -0.1, 0.0, 0.1, 0.2]
+    capacity_mode: false
+    sensitivity_folds: 5
+  rich:
+    output_subdir: fits_rich_acoustic
+    feature_set: rich
+    lags_seconds: [-0.2, -0.1, 0.0, 0.1, 0.2]
+    capacity_mode: false
+    sensitivity_folds: null
+  capacity:
+    output_subdir: fits_capacity_matched
+    feature_set: original
+    lags_seconds: [-0.2, -0.1, 0.0, 0.1, 0.2]
+    capacity_mode: true
+    sensitivity_folds: null
+  zero_lag:
+    output_subdir: zero_lag
+    feature_set: original
+    lags_seconds: [0.0]
+    capacity_mode: false
+    sensitivity_folds: null
+encoding:
+  alphas: [0.1, 1.0, 10.0, 100.0]
+  target_pca_components: 30
+  inner_folds: 4
+nulls:
+  production_count: 100
+  dry_run_count: 20
+  minimum_zero_seconds: 2.0
+statistics:
+  bootstrap_samples: 10000
+  confidence: 0.95
