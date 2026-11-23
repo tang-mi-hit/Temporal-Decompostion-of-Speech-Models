@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Stage 4 provenance, annotation, and temporal-context QC outputs."""
+"""Check model provenance, annotations, and temporal context."""
 
 from __future__ import annotations
 

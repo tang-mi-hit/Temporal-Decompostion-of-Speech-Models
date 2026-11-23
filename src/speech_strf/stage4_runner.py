@@ -103,7 +103,7 @@ def _write_json(path: Path, value: Any) -> None:
     )
 
 
-def load_stage4_config(path: str | Path = "configs/stage4_revision.yaml") -> dict[str, Any]:
+def load_stage4_config(path: str | Path = "configs/paper_analysis.yaml") -> dict[str, Any]:
     config_path = Path(path)
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(config, dict):
@@ -160,11 +160,11 @@ def load_stage4_config(path: str | Path = "configs/stage4_revision.yaml") -> dic
         raise ValueError(f"families must be exactly {list(FAMILIES)}")
     if int(config.get("expected_recording_count", 0)) < 3:
         raise ValueError("expected_recording_count must be at least three")
-    if set(config.get("governance_inputs", {})) != {
+    if set(config.get("governance_inputs", {})) - {
         "revision_roadmap",
         "claim_surface_manifest",
     }:
-        raise ValueError("Stage 4 governance input paths are required")
+        raise ValueError("Unknown governance input path")
     if int(config.get("nulls", {}).get("production_count", 0)) != 100:
         raise ValueError("Stage 4 production null count must be exactly 100")
     if int(config["nulls"].get("dry_run_count", 0)) < 20:
@@ -444,7 +444,7 @@ def _publish_fit_unit(
 class Stage4Runner:
     """Run deterministic Stage 4 fits, nulls, summaries, and synthetic checks."""
 
-    def __init__(self, config_path: str | Path = "configs/stage4_revision.yaml") -> None:
+    def __init__(self, config_path: str | Path = "configs/paper_analysis.yaml") -> None:
         self.config_path = Path(config_path).resolve()
         self.config = load_stage4_config(self.config_path)
         self.root = self.config_path.parent.parent
@@ -1804,7 +1804,7 @@ def run_fit(
     variant: str,
     layer: str | None = None,
     *,
-    config_path: str | Path = "configs/stage4_revision.yaml",
+    config_path: str | Path = "configs/paper_analysis.yaml",
 ) -> list[dict[str, Any]]:
     return Stage4Runner(config_path).fit(model, variant, layer)
 
@@ -1816,7 +1816,7 @@ def run_null(
     dry_run: bool = False,
     null_count: int | None = None,
     layer: str | None = None,
-    config_path: str | Path = "configs/stage4_revision.yaml",
+    config_path: str | Path = "configs/paper_analysis.yaml",
 ) -> list[dict[str, Any]]:
     return Stage4Runner(config_path).null(
         model,
@@ -1828,12 +1828,12 @@ def run_null(
 
 
 def run_summarize(
-    config_path: str | Path = "configs/stage4_revision.yaml",
+    config_path: str | Path = "configs/paper_analysis.yaml",
 ) -> dict[str, str]:
     return Stage4Runner(config_path).summarize()
 
 
 def run_synthetic_test(
-    config_path: str | Path = "configs/stage4_revision.yaml",
+    config_path: str | Path = "configs/paper_analysis.yaml",
 ) -> dict[str, Any]:
     return Stage4Runner(config_path).synthetic_test()

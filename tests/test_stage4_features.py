@@ -24,7 +24,7 @@ ROOT = Path(__file__).parents[1]
 
 def _config() -> dict:
     return yaml.safe_load(
-        (ROOT / "configs/features_stage4_rich.yaml").read_text(encoding="utf-8")
+        (ROOT / "configs/features_rich.yaml").read_text(encoding="utf-8")
     )
 
 
@@ -193,9 +193,9 @@ def test_driver_uses_global_phone_categories_and_repairs_corrupt_resume(tmp_path
     output = tmp_path / "rich"
     command = [
         sys.executable,
-        str(ROOT / "scripts/extract_stage4_rich_features.py"),
+        str(ROOT / "scripts/extract_rich_features.py"),
         "--config",
-        str(ROOT / "configs/features_stage4_rich.yaml"),
+        str(ROOT / "configs/features_rich.yaml"),
         "--manifest",
         str(manifest),
         "--validation-report",

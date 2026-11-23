@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Command-line entry point for the immutable-input Stage 4 revision."""
+"""Fit and check the paper's recording-level encoding models."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def _parallel_layers(function: Any, arguments: list[tuple[Any, ...]], workers: i
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--config", default="configs/stage4_revision.yaml", help="Stage 4 YAML config"
+        "--config", default="configs/paper_analysis.yaml", help="Paper analysis YAML"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

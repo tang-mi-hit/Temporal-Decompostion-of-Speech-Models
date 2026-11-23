@@ -5,9 +5,7 @@ expected_recording_count: 12
 manifest: outputs/manifest.csv
 model_root: outputs
 audit_output: outputs/stage4_revision/audit/input_audit.json
-governance_inputs:
-  revision_roadmap: ../paper1_pipeline_20260914/stage3_review/revision_roadmap.json
-  claim_surface_manifest: ../paper1_pipeline_20260914/stage4_revision/claim_surface_manifest.json
+governance_inputs: {}
 features:
   original: outputs/features
   rich: outputs/stage4_revision/features_rich

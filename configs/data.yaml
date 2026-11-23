@@ -1,9 +1,9 @@
 random_seed: 17
 data:
-  audio_root: /share/workspace3/ieeg/seeg/story_listen_v2/stimuli_wav
-  alignment_root: /share/workspace3/ieeg/seeg/story_listen_v2/stimuli_textgrid
+  audio_root: stimuli
+  alignment_root: stimuli
   alignment_format: TEXTGRID
-  output_root: /share/home/mitan/audio_model
+  output_root: outputs
   manifest_path: outputs/manifest.csv
   validation_report: outputs/validation_report.json
   language: zh

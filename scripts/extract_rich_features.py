@@ -55,7 +55,7 @@ def _recording_id(value: object) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="configs/features_stage4_rich.yaml")
+    parser.add_argument("--config", default="configs/features_rich.yaml")
     parser.add_argument("--manifest", default="outputs/manifest.csv")
     parser.add_argument("--validation-report", default="outputs/validation_report.json")
     parser.add_argument(

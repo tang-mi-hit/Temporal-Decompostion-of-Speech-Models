@@ -520,12 +520,13 @@ def verify_stage4_handoff(root: str | Path) -> dict[str, Any]:
 
 
 def build_stage4_handoff(
-    config_path: str | Path = "configs/stage4_revision.yaml",
+    config_path: str | Path = "configs/paper_analysis.yaml",
     *,
     output: str | Path | None = None,
     job_ids: Sequence[str] = (),
     patch_base: str | None = None,
     archive_existing: bool = False,
+    local_run: bool = False,
 ) -> dict[str, Any]:
     """Build and atomically publish the Stage 4 manuscript handoff."""
     runner = Stage4Runner(config_path)
@@ -760,7 +761,7 @@ def build_stage4_handoff(
             _write_csv(table_root / f"{variant}_vs_original_inference.csv", contrast)
 
         rich_config = yaml.safe_load(
-            (runner.root / "configs" / "features_stage4_rich.yaml").read_text(
+            (runner.root / "configs" / "features_rich.yaml").read_text(
                 encoding="utf-8"
             )
         )
@@ -1049,9 +1050,10 @@ def build_stage4_handoff(
                 )
 
         logs_root = output_root / "logs"
-        jobs, log_inventory = _slurm_summary(logs_root, job_ids)
-        _write_csv(verification / "slurm_job_completion.csv", jobs)
-        _write_csv(verification / "slurm_log_inventory.csv", log_inventory)
+        if not local_run:
+            jobs, log_inventory = _slurm_summary(logs_root, job_ids)
+            _write_csv(verification / "slurm_job_completion.csv", jobs)
+            _write_csv(verification / "slurm_log_inventory.csv", log_inventory)
         test_target = verification / "test_reports"
         test_target.mkdir(parents=True, exist_ok=True)
         for source in sorted(logs_root.glob("*.xml")):
@@ -1139,14 +1141,14 @@ def build_stage4_handoff(
                 representative_info,
             )
 
-        if not list(test_target.glob("*")):
+        if not local_run and not list(test_target.glob("*")):
             missing.append(
                 {
                     "unit": str(logs_root / "*.xml"),
                     "reason": "test_report_missing",
                 }
             )
-        if jobs.empty:
+        if not local_run and jobs.empty:
             missing.append(
                 {
                     "unit": "sacct",

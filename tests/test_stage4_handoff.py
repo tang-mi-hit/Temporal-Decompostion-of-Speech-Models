@@ -22,9 +22,9 @@ def _handoff_fixture(tmp_path: Path) -> tuple[Path, Stage4Runner]:
     config = _config(tmp_path)
     _inputs(tmp_path)
     source_rich = (
-        Path(__file__).parents[1] / "configs" / "features_stage4_rich.yaml"
+        Path(__file__).parents[1] / "configs" / "features_rich.yaml"
     )
-    (tmp_path / "configs" / "features_stage4_rich.yaml").write_bytes(
+    (tmp_path / "configs" / "features_rich.yaml").write_bytes(
         source_rich.read_bytes()
     )
     runner = Stage4Runner(config)

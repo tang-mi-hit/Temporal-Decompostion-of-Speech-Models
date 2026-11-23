@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve and validate deadline-constrained Stage 4 model/layer manifests."""
+"""Resolve the paper's input, middle, and final layers from saved activations."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from speech_strf.stage4_runner import Stage4Runner, discover_layers, validate_un
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default="configs/stage4_revision.yaml")
+    parser.add_argument("--config", default="configs/paper_analysis.yaml")
     parser.add_argument(
         "--output",
         default="outputs/stage4_revision/manifests/deadline_compute_scope",

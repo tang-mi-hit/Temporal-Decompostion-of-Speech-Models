@@ -15,7 +15,7 @@ from speech_strf.stage4_runner import Stage4Runner, load_stage4_config, validate
 
 def _config(tmp_path: Path) -> Path:
     source = load_stage4_config(
-        Path(__file__).parents[1] / "configs" / "stage4_revision.yaml"
+        Path(__file__).parents[1] / "configs" / "paper_analysis.yaml"
     )
     source["manifest"] = "outputs/manifest.csv"
     source["model_root"] = "outputs"
@@ -36,7 +36,7 @@ def _config(tmp_path: Path) -> Path:
         "sensitivity_folds": None,
         "inner_folds": 3,
     }
-    config = tmp_path / "configs" / "stage4_revision.yaml"
+    config = tmp_path / "configs" / "paper_analysis.yaml"
     config.parent.mkdir()
     config.write_text(yaml.safe_dump(source, sort_keys=False), encoding="utf-8")
     for name in ("data.yaml", "models.yaml", "features.yaml", "analysis.yaml"):

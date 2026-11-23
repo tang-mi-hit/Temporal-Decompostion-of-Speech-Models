@@ -1,219 +1,98 @@
-# HuBERT-first speech STRF pipeline
+# Conditional Temporal Decomposition of Internal Representations Across Speech Models
 
-This phase provides a leakage-safe, configuration-driven pipeline for asking how
-acoustic, prosodic, phonetic, onset, and word-level predictors explain held-out
-HuBERT activations. It is methodologically inspired by Zhang et al., *Neuron*
-(2026), DOI `10.1016/j.neuron.2025.10.011`; it is an independent implementation,
-not an exact replication.
+This repository contains the source code and stimulus data for an ICASSP 2027 submission in **Benchmark and evaluation of spoken language**. The benchmark measures how acoustics, prosody, phonetics, word timing, and recording onset contribute to the held-out prediction of layer activations. Conditional contribution is the difference in held-out R² between the full model and a fit omitting one predictor family. Word timing consists of boundaries and durations.
 
-## Setup and smoke test
+## Repository layout
+
+- `scripts/` contains the command-line entry points listed below. Run them from the repository root.
+- `src/speech_strf/` contains the importable implementation shared by those commands and the tests. Internal names containing `stage4` date from manuscript revision. They implement the submitted grouped analyses, controls, and result export. The public commands below use descriptive names.
+- `stimuli/` contains the 12 paired Mandarin WAV and Praat TextGrid files used by the benchmark. The TextGrids provide the phone and word intervals. Check any applicable source permissions before redistributing the recordings.
+- `configs/` defines the input files and benchmark settings. `tests/` checks preprocessing, model adapters, fitting, and inference on small inputs.
+
+## 1. Set up a local environment
+
+Use Python 3.10–3.13 on macOS or Linux. Windows users can run the same commands under WSL. Allow space for nine model downloads, activation stores, and fit outputs. Full fitting is substantially slower than the synthetic check.
 
 ```bash
-cd project
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -e '.[test]'
-pytest
-python3 scripts/smoke_test.py --config configs/smoke_test.yaml
+python -m pip install -e '.[models,test]'
+python scripts/validate_model_registry.py
+python scripts/run_paper_analysis.py synthetic-test
 ```
 
-The smoke command uses generated audio-like fixtures and makes a nested
-group-CV results table plus SVG/PDF diagnostics without downloading a model.
+The registry defaults to CPU and float32. You can choose a supported device and dtype in `configs/models.yaml` before extracting. Keep the same settings during the fit. The first extraction needs internet access for checkpoint downloads. To use a pre-downloaded complete checkpoint snapshot, pass `--checkpoint /path/to/snapshot` to both the extraction and fit commands for that model.
 
-## Real-data sequence
+## 2. Validate inputs and extract features
 
 ```bash
-python3 scripts/build_manifest.py --config configs/data.yaml
-python3 scripts/extract_features.py --config configs/features.yaml
-# The completed legacy HuBERT extraction/fit/figures are now a locked reference.
-python3 scripts/validate_model_registry.py
+python scripts/build_manifest.py --config configs/data.yaml
+python scripts/extract_features.py --config configs/features.yaml
+python scripts/extract_rich_features.py --config configs/features_rich.yaml
 ```
 
-Extraction refuses to run unless the validation report is valid. Models are
-local-cache-only unless `--allow-download` is explicit. Audio remains read-only;
-do not commit or upload audio, annotations, transcripts, or activations.
+The manifest groups all frames by recording. Inspect `outputs/validation_report.json` if validation fails. The base features and activations share a 50 Hz time grid. The original predictor design has 144 columns before lag expansion, comprising 41 acoustic, 3 prosodic, 96 phonetic, 3 word-timing, and 1 recording-onset column. The rich feature archive adds spectral dynamics and descriptors for the richer-acoustics control.
 
-The default 4090D extraction configuration uses CUDA FP16 with 20-second core
-windows and one second of context on both sides. Activation frames are stitched
-by their convolutional receptive-field centers; overlap frames are retained
-exactly once. Completed recording groups are skipped on rerun. Use
-`--overwrite` only to intentionally recompute them.
+## 3. Extract all nine checkpoints and fit the grouped reference models
 
-## Multi-model benchmark
+These are the registry keys and model IDs. HuBERT Large writes to `outputs/hubert_large_refactor_rerun/`.
 
-`configs/models.yaml` is the model registry. Every nonreference model writes to
-`outputs/<model-key>/`; the existing legacy `outputs/activations.h5`, fit
-results, and figures are never modified. All adapters preserve native
-timestamps and linearly interpolate audio-model states onto the same 50 Hz
-audio-relative grid used by HuBERT. Downstream fitting uses only canonical-grid
-states and the existing feature files, lags, grouped folds, metrics, reduced
-models, and figure functions.
-
-Validate registry structure and installed Transformers classes:
+- `hubert_base` — `facebook/hubert-base-ls960`
+- `hubert_large_reference` — `facebook/hubert-large-ls960-ft`
+- `wav2vec2_base` — `facebook/wav2vec2-base-960h`
+- `wav2vec2_large` — `facebook/wav2vec2-large-960h-lv60-self`
+- `wavlm_base_plus` — `microsoft/wavlm-base-plus`
+- `wavlm_large` — `microsoft/wavlm-large`
+- `data2vec_audio_base` — `facebook/data2vec-audio-base-960h`
+- `xls_r_300m` — `facebook/wav2vec2-xls-r-300m`
+- `whisper_medium_encoder` — `openai/whisper-medium` (encoder only)
 
 ```bash
-python3 scripts/validate_model_registry.py
+set -e
+for model in hubert_base hubert_large_reference wav2vec2_base wav2vec2_large \
+  wavlm_base_plus wavlm_large data2vec_audio_base xls_r_300m whisper_medium_encoder
+do
+  python scripts/run_model_pipeline.py --model "$model" --stage extract --allow-download
+  python scripts/run_model_pipeline.py --model "$model" --stage fit
+done
 ```
 
-A complete `hf download MODEL_ID --local-dir DIRECTORY` snapshot already
-contains model weights, `config.json`, and the processor/tokenizer metadata.
-No separate calculation creates these files. Transfer the entire directory;
-manually copying only `pytorch_model.bin` or `model.safetensors` is insufficient.
-BERT needs its tokenizer files and Whisper needs `preprocessor_config.json`.
+Extraction stores canonical layer activations and model metadata. The grouped reference fits provide fold-level sensitivity results and the original fold-specific ridge penalties for the fixed-alpha comparison. Checkpoint revisions are recorded in the extraction metadata where available. The supplied registry points to the public `main` revisions. The original environment and checkpoint hashes are unavailable in this repository, so exact numerical agreement also depends on the downloaded checkpoint and runtime.
 
-Run one model after staging its checkpoint locally. Pass the same local
-checkpoint identity to every stage:
+## 4. Run the paper analyses
 
 ```bash
-MODEL=wavlm_base_plus
-CHECKPOINT=/share/home/mitan/models/wavlm-base-plus
-python3 scripts/run_model_pipeline.py --model "$MODEL" --checkpoint "$CHECKPOINT" --stage extract
-python3 scripts/run_model_pipeline.py --model "$MODEL" --checkpoint "$CHECKPOINT" --stage fit
-python3 scripts/run_model_pipeline.py --model "$MODEL" --checkpoint "$CHECKPOINT" --stage figures
-python3 scripts/compare_to_hubert_reference.py --model wavlm_base_plus
+python scripts/check_model_provenance.py
+python scripts/run_paper_analysis.py audit
+python scripts/run_paper_analysis.py fit hubert_base original
+python scripts/resolve_paper_layers.py
+python scripts/run_paper_controls.py observed
+python scripts/run_paper_controls.py null
 ```
 
-The same command pattern applies to these enabled keys:
+The HuBERT Base analysis covers its input and all 12 transformer layers and includes leave-one-recording-out (LORO) sensitivity. The observed command prepares fixed-alpha refits and runs the richer-acoustics and equal-rank controls for HuBERT Base, wav2vec 2.0 Large, WavLM Large, data2vec Audio Base, XLS-R 300M, and Whisper Medium, plus zero-lag fits for all nine checkpoints. Each of these controls samples input, middle, and final depth. The null command runs 20 within-recording circular shifts at middle depth for HuBERT Base, wav2vec 2.0 Large, WavLM Large, and Whisper Medium, reusing the observed penalties.
 
-```text
-hubert_base
-wav2vec2_base
-wav2vec2_large
-wavlm_base_plus
-wavlm_large
-data2vec_audio_base
-xls_r_300m
-whisper_medium_encoder
-bert_base_uncased
-```
+The five-lag design uses −200, −100, 0, 100 and 200 ms. Fits use the configured grouped folds, training-only fitting of preprocessing, at most 30 target principal components, and the four candidate ridge penalties. Completed analysis units are reused after integrity checks. The CLI supports individual fits for troubleshooting. For example, `python scripts/run_paper_analysis.py fit hubert_base original --layer layer_00_input` fits only the input representation after the nine-model audit can pass.
 
-For example:
+## 5. Export and check the results
 
 ```bash
-python3 scripts/run_model_pipeline.py --model bert_base_uncased --stage all
-python3 scripts/compare_to_hubert_reference.py --model bert_base_uncased
+python scripts/export_paper_results.py
+python scripts/export_paper_results.py --verify
 ```
 
-`mms_1b_all` is registered but disabled pending license review. The resolved
-public W2V-BERT identifier is `facebook/w2v-bert-2.0`, pinned in the registry,
-but `w2v_bert_2` remains disabled until its native frontend timing is validated
-with the actual checkpoint.
+The default export is under `outputs/stage4_revision/handoff/`. See `tables/` for the recording-level, layer-level, split-sensitivity, and PCA-coverage outputs, and `verification/missing_incomplete_units.csv` for gaps. Use `--archive-existing` when exporting again to the same location. The export writes recording-aggregated exact sign-flip tests, bootstrap intervals, and Benjamini–Hochberg adjusted values to `outputs/stage4_revision/paper_summary/aggregate_inference.csv`. `checkpoint_omissions_by_fold.csv` reports the checkpoint-omission sensitivity of the grouped reference fits.
 
-To add a model, add one registry entry. Reuse `generic_speech` for waveform
-encoders with a Hugging Face hidden-state model and convolutional timing. Add a
-new adapter only for a genuinely different input/timing contract.
+For Figure 1, use the model registry, extraction metadata, and the predictor dimensions above. For the numerical inputs to Figure 2, use the HuBERT Base summary (A), richer-acoustics, equal-rank, and zero-lag recording tables (B–D), the paired observed-minus-shifted table (E), and `pca_coverage_summary.csv` (F). The publication figure layout and original fit archives are not bundled. As a check against the submission, the all-layer HuBERT Base means round to approximately 0.304 for acoustics, 0.0237 for prosody, 0.0200 for phonetics, 0.00281 for word timing, and 0.000240 for recording onset.
 
-### BERT baseline
+## Configuration reference
 
-BERT uses labeled forced-aligned word intervals. A fast tokenizer retains
-word-to-wordpiece ownership; wordpieces are mean-pooled per layer. Context is
-split at punctuation or a configured 0.5-second gap. Each word vector is held
-constant over its `[start, end)` interval on the canonical grid, with zeros
-outside aligned words. Coverage and unknown-token fraction are recorded.
-BERT-derived values are targets only and are explicitly forbidden from the
-predictor feature set. Figures label BERT as a text-only baseline. Because the
-checkpoint is English uncased while the stimuli are Mandarin, its tokenizer
-coverage requires careful interpretation.
+- `configs/data.yaml` selects the recordings, their annotations, and the manifest paths.
+- `configs/features.yaml` defines the original feature archives.
+- `configs/features_rich.yaml` defines the richer-acoustics control archives.
+- `configs/models.yaml` selects the nine checkpoints and the extraction runtime.
+- `configs/analysis.yaml` defines the grouped reference fits and supplies the contract checked before reusing their ridge penalties.
+- `configs/paper_analysis.yaml` defines the recording-level fits, control variants, and inference options used by the paper workflow.
 
-### Comparability and HuBERT regression
-
-Every completed fit writes `comparability_contract.json` and
-`run_metadata.json`. Comparison checks stimulus IDs, canonical grid, feature
-order/configuration, lag grid, held-out groups, reduced models, metrics, and
-result schema. `comparability_report.json` is machine-readable.
-
-Freeze a contract beside the completed legacy HuBERT outputs once:
-
-```bash
-python3 scripts/freeze_hubert_reference.py
-```
-
-For a non-destructive HuBERT refactor rerun, provide a separate output:
-
-```bash
-export HUBERT=/share/home/mitan/models/hubert-large-ls960-ft/hubert-large-ls960-ft
-python3 scripts/run_model_pipeline.py \
-  --model hubert_large_reference \
-  --checkpoint "$HUBERT" \
-  --output outputs/hubert_large_refactor_rerun \
-  --stage extract
-python3 scripts/run_model_pipeline.py \
-  --model hubert_large_reference \
-  --checkpoint "$HUBERT" \
-  --output outputs/hubert_large_refactor_rerun \
-  --stage fit
-python3 scripts/run_model_pipeline.py \
-  --model hubert_large_reference \
-  --checkpoint "$HUBERT" \
-  --output outputs/hubert_large_refactor_rerun \
-  --stage figures
-python3 scripts/compare_to_hubert_reference.py \
-  --model hubert_large_reference \
-  --candidate-root outputs/hubert_large_refactor_rerun \
-  --run-hubert-regression
-```
-
-`--stage fit` consumes `activations.h5` produced by `--stage extract` in the
-same output directory; it does not load or extract the checkpoint itself. In a
-Slurm script using `set -u`, define or export `HUBERT` before the first
-`"$HUBERT"` expansion.
-
-Regression tolerances are `2e-3` absolute for FP16 activations, `1e-6` seconds
-for timestamps, and `1e-4` for downstream summaries.
-
-### Cross-model predictability summary
-
-After each candidate has passed `compare_to_hubert_reference.py`, aggregate any
-completed set without rerunning a model:
-
-```bash
-python3 scripts/summarize_model_comparison.py \
-  --model hubert_base \
-  --model wavlm_base_plus \
-  --model whisper_medium_encoder
-```
-
-The command writes `outputs/model_comparison/model_comparison_summary.csv`,
-layer and feature-family detail tables, paired fold differences from HuBERT
-Large, SVG/PDF predictability figures, and source hashes. It refuses candidates
-whose comparability report did not pass. “Higher predictability” means the fixed
-feature set explains more variance in that representation; it is not a general
-model-quality or causal claim.
-
-Input validation treats a configured overhang of at most 30 ms as a warning only
-when the interval label is empty. Original TextGrid times remain unchanged.
-Labeled intervals, larger overruns, missing files, and malformed timing remain
-errors that block extraction.
-
-## Method choices
-
-Paper-compatible choices explicitly represented in configuration are the 50 Hz
-analysis grid, HuBERT layer 0 plus all returned transformer hidden states, and a
-separate zero-lag analysis. Runtime inspection—not a hard-coded layer count—
-records representation count, dimensions, observed frame rate, model config,
-requested revision, and resolved commit hash.
-
-Project extensions are configurable temporal lags, nested story-grouped CV,
-training-fold-only normalization and PCA, per-unit or PCA targets, and
-independently tuned full-versus-reduced ridge models. `ΔR²` is named
-**conditional unique contribution** and is not interpreted causally.
-
-Optional phoneme-sequence statistics, word frequency, lexical surprisal, and
-contextual embeddings are disabled and unavailable until suitable Mandarin
-transcripts/resources are supplied. Default temporal lags and ridge
-hyperparameters are project choices, not claims about the paper.
-
-The retained initial pool contains 12 recordings. `story17` and `story18` are
-explicitly excluded in `configs/data.yaml` because they are nonsemantic control
-conditions, not stimulus stories for this encoding analysis.
-
-## Current scaling blockers
-
-The configured `/share/workspace3/...` and `/share/home/mitan/...` mounts are
-not visible in the Cloud Agent used to create this scaffold. Consequently,
-`outputs/validation_report.json` records missing real inputs, and no real model
-details are asserted. Before scaling, confirm TextGrid tier names and label
-conventions, story grouping for segmented files, approved model-cache location,
-compute/device policy, and the Mandarin lexical resources (if optional features
-are desired).
+Run `python -m pytest` after installing the test and model extras if you want to verify the implementation on small fixtures.
 
