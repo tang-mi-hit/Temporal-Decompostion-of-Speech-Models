@@ -1,4 +1,4 @@
-# Conditional Temporal Decomposition of Internal Representations Across Speech Models
+
 
 This repository contains the source code and stimulus data for an ICASSP 2027 submission in **Benchmark and evaluation of spoken language**. The benchmark measures how acoustics, prosody, phonetics, word timing, and recording onset contribute to the held-out prediction of layer activations. Conditional contribution is the difference in held-out R² between the full model and a fit omitting one predictor family. Word timing consists of boundaries and durations.
 
